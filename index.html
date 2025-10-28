@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>灾害风险沟通AI助手</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<style>
+body { background-color: #f4f6f8; }
+.message { max-width: 80%; padding: 10px 14px; border-radius: 16px; margin: 8px 0; line-height: 1.6; }
+.system { background-color: #e0f2fe; align-self: flex-start; }
+.user { background-color: #d1fae5; align-self: flex-end; }
+button { transition: 0.2s; }
+button:disabled { opacity: 0.5; cursor: not-allowed; }
+.typing::after { content: "▋"; animation: blink 1s infinite; }
+@keyframes blink { 0%, 50% { opacity: 1; } 51%,100% { opacity: 0; } }
+</style>
+</head>
+<body class="flex flex-col items-center justify-start min-h-screen p-4">
+
+<div id="chat" class="flex flex-col w-full max-w-2xl bg-white p-4 rounded-2xl shadow-lg overflow-y-auto" style="height: 80vh;"></div>
+
+<script>
+const chat = document.getElementById("chat");
+
+function addMessage(text, sender="system") {
+  const msg = document.createElement("div");
+  msg.className = `message ${sender}`;
+  msg.textContent = text;
+  chat.appendChild(msg);
+  chat.scrollTop = chat.scrollHeight;
+  return msg;
+}
+
+function typeMessage(text, sender="system", delay=30) {
+  return new Promise(resolve => {
+    const msg = document.createElement("div");
+    msg.className = `message ${sender}`;
+    chat.appendChild(msg);
+    chat.scrollTop = chat.scrollHeight;
+    let i = 0;
+    const timer = setInterval(() => {
+      msg.textContent = text.slice(0, i++);
+      if (i > text.length) {
+        clearInterval(timer);
+        resolve();
+      }
+      chat.scrollTop = chat.scrollHeight;
+    }, delay);
+  });
+}
+
+async function startChat() {
+  await typeMessage("您好！我是灾害风险沟通AI助手。针对此次台风“风神”，您有什么特别关心的问题吗？请从以下问题中选择您想了解的内容：");
+  await showQuestions(group1);
+}
+
+const group1 = {
+  title: "（一）信息获取与风险认知",
+  questions: [
+    {
+      q: "台风要来之前，我应该重点看哪些官方消息？",
+      a: "您需要锁定权威信息源，例如本地气象台和应急管理部门发布的消息。关键要获取台风预计的登陆地点、时间、风力等级以及降雨预报。特别要注意政府发布的撤离通知、指定疏散路线和避难场所位置。这是做出正确决策的第一步。"
+    },
+    {
+      q: "我家住在什么位置算比较危险？什么情况就该撤离了？",
+      a: "如果您家位于海边、河边、低洼地带、山脚、边坡附近，这些地方易受风暴潮、洪水、泥石流威胁，风险较高。一旦接到社区正式撤离通知，或观察到水位快速上涨、山体有异响等危险征兆，就必须果断撤离。"
+    },
+    {
+      q: "在外面突然遇到狂风暴雨，怎么紧急避险？",
+      a: "立即寻找坚固的建筑物进去躲避。远离可能倒塌或坠落的物体，避开积水区域，不要在桥上、水边停留。"
+    }
+  ]
+};
+
+const group2 = {
+  title: "（二）具体防护措施与应急准备",
+  questions: [
+    {
+      q: "家里该提前备好哪些应急物资？",
+      a: "准备食物、水、照明设备、药品、现金、证件复印件等，应满足全家至少3天需求，并放在容易拿取的位置。"
+    },
+    {
+      q: "怎么检查房子才最安全，防止东西掉下去或家里进水？",
+      a: "检查阳台窗台收回杂物，确认窗户密封；疏通排水管，插座加防水盖，家具电器尽量垫高。"
+    },
+    {
+      q: "台风天已经待在家里了，还有什么要特别注意的安全细节？",
+      a: "远离门窗，可贴‘米’字胶带；关闭不必要的电器，拔掉插头；如屋内进水，立即切断电源。"
+    }
+  ]
+};
+
+const group3 = {
+  title: "（三）外出行为与安全准则",
+  questions: [
+    {
+      q: "万一有急事必须出门，怎么走比较安全？",
+      a: "尽量取消出行。如必须外出，穿防滑鞋、紧身雨衣，避开广告牌、大树、电线杆，不要打伞。"
+    },
+    {
+      q: "台风天开车，有什么特别的驾驶技巧？",
+      a: "慢行、稳住方向盘、开启雾灯双闪，不可强行通过积水。切勿停车在树下或广告牌下。"
+    },
+    {
+      q: "台风过后回家，进门首先要检查什么？",
+      a: "先检查房屋结构是否安全，再确认电路和燃气无异常，严禁立即通电或用火。"
+    }
+  ]
+};
+
+async function showQuestions(group) {
+  await typeMessage(group.title);
+  const container = document.createElement("div");
+  container.className = "flex flex-col gap-2 ml-4";
+  group.questions.forEach(({q, a}) => {
+    const btn = document.createElement("button");
+    btn.textContent = q;
+    btn.className = "text-left px-4 py-2 bg-blue-100 rounded-xl hover:bg-blue-200";
+    btn.onclick = async () => {
+      Array.from(container.querySelectorAll("button")).forEach(b => b.disabled = true);
+      addMessage(q, "user");
+      await typeMessage(a, "system");
+      if (group === group1) await showQuestions(group2);
+      else if (group === group2) await showQuestions(group3);
+      else endChat();
+    };
+    container.appendChild(btn);
+  });
+  chat.appendChild(container);
+  chat.scrollTop = chat.scrollHeight;
+}
+
+function endChat() {
+  const exitBtn = document.createElement("button");
+  exitBtn.textContent = "退出对话";
+  exitBtn.className = "mt-4 px-4 py-2 bg-red-200 rounded-xl hover:bg-red-300";
+  exitBtn.onclick = () => window.close();
+  chat.appendChild(exitBtn);
+  chat.scrollTop = chat.scrollHeight;
+}
+
+startChat();
+</script>
+</body>
+</html>
